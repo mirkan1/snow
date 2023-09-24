@@ -19,18 +19,36 @@ app = Flask(__name__)
 openai.api_key = os.getenv("OPENAI_API_KEY")
 app.secret_key = os.urandom(24)
 
-# @tool
+
+@app.route("/api/getAbi", methods=("GET", "POST"))
+def getAbi():
+    with open("static/abi.json", "r") as file:
+        return file.read()
+    
+CONTRACT_FUNCS = []
+@tool
 def get_contract_function_names():
     """Returns the names of the contract functions."""
-    abi = open("abi.json", "r")
+    global CONTRACT_FUNCS
+    if not len(CONTRACT_FUNCS):
+        abi = open("static/abi.json", "r")
+        abi = json.load(abi)
+        
+        for i in abi:
+            if "name" not in i:
+                continue
+            CONTRACT_FUNCS.append(i["name"])
+    return CONTRACT_FUNCS
 
+USER_WANT_MINT = False
 @tool
-def get_word_length(word: str) -> int:
-    """Returns the length of a word."""
-    return len(word)
-
-get_contract_function_names()
-tools = [get_word_length]
+def mint_nft():
+    """Mints token"""
+    global USER_WANT_MINT
+    USER_WANT_MINT = True
+    return USER_WANT_MINT
+    
+tools = [ get_contract_function_names, mint_nft]
 if OPENAI_API_KEY:
     llm = ChatOpenAI(temperature=0, openai_api_key=os.getenv("OPENAI_API_KEY"))
     MEMORY_KEY = "chat_history"
@@ -56,7 +74,8 @@ if OPENAI_API_KEY:
     agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
 
 @app.route("/", methods=("GET", "POST"))
-def answer_chat():
+def answer_chat(mint_wanted=False):
+    global USER_WANT_MINT
     if request.method == "POST":
         user_input = request.form["question"]
         response_text = interact_with_chat(user_input)
@@ -67,17 +86,21 @@ def answer_chat():
 
         ai_response = response_text['output']
 
-
         # Add the user's question and AI's response to chat history
         session['chat_history'].append({
             'question': user_input,
             'response': ai_response
         })
         session.modified = True
-        return redirect(url_for("answer_chat"))
-
-    return render_template("index.html", chat_history=session.get('chat_history', []))
-
+        mint_wanted = USER_WANT_MINT
+        USER_WANT_MINT = False
+        chat_history = session.get('chat_history', [])
+        if len(chat_history) > 1:
+            if chat_history[0]['question'] == chat_history[1]['question']:
+                mint_wanted = False
+        return render_template("index.html", chat_history=chat_history, functions=CONTRACT_FUNCS, mint_wanted=mint_wanted)
+    return render_template("index.html", chat_history=session.get('chat_history', []), functions=CONTRACT_FUNCS, mint_wanted=False)
+    
 def interact_with_chat(user_input):
     result = agent_executor.invoke({"input": user_input, "chat_history": chat_history})
     chat_history.append(HumanMessage(content=user_input))
