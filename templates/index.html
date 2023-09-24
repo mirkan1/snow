@@ -6,6 +6,7 @@
     <link rel="icon" type ="image/png" sizes="32x32" href="{{ url_for('static', filename='favicon.ico') }}">
 </head>
 <body>
+    <p id="status">status: </p>
     <form action="/" method="post">
         <label for="question">Ask a question:</label>
         <input type="text" name="question" id="question">
@@ -584,7 +585,21 @@
       function parseReply(text) {
         // if text =="mint"
       }
+
+      function oneInchHealthCheck() {
+        axios.get("/api/fusion")
+          .then(res => {
+            const status = res.statusText;
+            const statusDiv = document.querySelector("#status");
+            if (status !== "OK") {
+              statusDiv.innerText = "status: down"
+            } else {
+              statusDiv.innerText = "status: up"
+            }
+          })
+      }
       main();
+      oneInchHealthCheck();
 
   </script>
 

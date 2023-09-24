@@ -31,10 +31,8 @@ def get_word_length(word: str) -> int:
 
 get_contract_function_names()
 tools = [get_word_length]
-
 if OPENAI_API_KEY:
-    openai.api_key = os.getenv("OPENAI_API_KEY")
-    llm = ChatOpenAI(temperature=0, openai_api_key=os.environ["OPENAI_API_KEY"],)
+    llm = ChatOpenAI(temperature=0, openai_api_key=os.getenv("OPENAI_API_KEY"))
     MEMORY_KEY = "chat_history"
     prompt = ChatPromptTemplate.from_messages([
         ("system", "You are a powerful assistant that onboards cryptocurrency (crypto) newcomers, specifically those who are around 12-18 years old, in easy and simple terms. You provide simple answers that are understandable. You also can use your tools to answer the questions. If you do not know the answer to a question, you truthfully say you do not know."),
@@ -103,8 +101,6 @@ oneinch_key = os.getenv("oneinch_key")
 
 @app.route("/api/fusion", methods=["GET"])
 def fusion():
-    print("fusion_api", fusion_api)
-    print("oneinch_key", oneinch_key)
     headers = {
         'accept': 'application/json',
         'Authorization': f'Bearer {oneinch_key}'
