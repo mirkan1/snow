@@ -1,6 +1,6 @@
-# SNOW
-
-## Setup
+## SNOW
+`SNOW` aims to help users for any web3 and/or cryptrocurrency related questions and asisst their decisions on related questions, for example staking a coin for the available network(s)
+### Setup
 
 1. If you don’t have Python installed, [install it from here](https://www.python.org/downloads/).
 
